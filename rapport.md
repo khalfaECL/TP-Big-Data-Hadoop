@@ -346,6 +346,56 @@ changer le nom de sortie (ex. `sortie2`). Suppression :
 hadoop fs -rm -r -f sortie
 ```
 
+### Monitoring du cluster et des jobs
+Hadoop propose des interfaces web utiles pour verifier l'etat du cluster. Le
+Namenode est visible sur `http://localhost:9870` et le ResourceManager (Yarn)
+sur `http://localhost:8088`. Ces ports ont ete exposes lors du lancement des
+conteneurs Docker.
+
+Sur la page du Namenode, mon instance indique un etat **active** et une version
+Hadoop **3.4.1**, ce qui confirme que le service est bien demarre. L'onglet
+"Datanodes" montre un seul noeud en service, avec une capacite d'environ
+**1006.85 GB** et un usage HDFS tres faible (**~1.42 MB**), ce qui est coherent
+avec un petit test sur `dracula`. Le resume affiche aussi `Safemode: off` et
+`Security: off`, donc le cluster est operationnel pour les essais du TP.
+
+Enfin, le tableau "Summary" liste **1 Live Node**, **0 Dead Nodes** et un
+petit nombre de blocs (5), signe que les fichiers charges dans HDFS sont bien
+reconnus. Ces observations confirment que le cluster tourne correctement avant
+le lancement des jobs MapReduce.
+
+Du cote Yarn (port `8088`), la page "Nodes of the cluster" montre un seul noeud
+en etat **RUNNING**, avec **12 GB** de memoire et **8 vCores** disponibles, et
+aucune ressource consommee au repos. La page "All Applications" affiche un job
+MapReduce termine avec le statut **SUCCEEDED**, ce qui confirme que l'execution
+du wordcount a bien ete prise en compte par le ResourceManager.
+
+## Tests et exercice
+### Wordcount improved
+Pour reutiliser les scripts ameliores dans le conteneur Hadoop, on ouvre un
+second terminal sur la machine hote et on copie les fichiers vers Linux avec
+`docker cp`. Cette methode servira aussi pour de futurs scripts :
+```powershell
+docker cp wc_mapper_improved.py hadoop-master:/root/TP_Hadoop/wordcount/
+docker cp wc_reducer_improved.py hadoop-master:/root/TP_Hadoop/wordcount/
+```
+
+Dans le premier terminal (dans le conteneur), on verifie la presence des
+fichiers, on les rend executables, puis on convertit les fins de ligne Windows
+vers Linux avec `dos2unix` :
+```bash
+cd /root/TP_Hadoop/wordcount
+ls
+chmod +x wc_mapper_improved.py
+chmod +x wc_reducer_improved.py
+dos2unix wc_mapper_improved.py
+dos2unix wc_reducer_improved.py
+```
+
+Remarque : la commande d'exemple `dos2unix fichier.py` affiche une erreur si le
+fichier n'existe pas. Dans notre cas, la conversion a bien fonctionne sur les
+deux scripts ameliore.
+
 ## Conclusion
 Le traitement MapReduce fonctionne correctement sur un corpus volumineux.
 Le tri des donnees avant reduction est indispensable pour agreger les comptes
