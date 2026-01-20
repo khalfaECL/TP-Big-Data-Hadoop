@@ -596,6 +596,25 @@ PowerShell), on doit voir des lignes au format `mot<TAB>compte`. Pour valider
 rapidement, on peut chercher un mot attendu (ex. `service`, `shall`) et verifier
 qu'il a un compteur non nul.
 
+### Test MrJob sur le cluster Hadoop
+Le meme wordcount a ete lance sur le cluster Hadoop avec le runner `-r hadoop`.
+Deux variantes ont ete testees : lecture depuis STDIN et lecture directe depuis
+HDFS.
+
+Commandes :
+```bash
+python wc_mrjob_1.py -r hadoop < dracula > resultHadoop.txt
+python wc_mrjob_1.py -r hadoop hdfs:///user/root/input/dracula > resultHadoop.txt
+```
+
+Extrait de sortie (job soumis et termine) :
+```text
+Running job: job_1768916694477_0003
+map 100% reduce 100%
+Job job_1768916694477_0003 completed successfully
+The url to track the job: http://hadoop-master:8088/proxy/application_1768916694477_0003/
+```
+
 ### Exercice 1 - Questionner un fichier de ventes
 Dans cette partie, l'objectif est d'analyser un gros fichier de ventes afin de
 produire des statistiques. Deux jeux de donnees sont utilises : `purchases.txt`
@@ -646,3 +665,74 @@ segment precis.
 chiffre d'affaires par ville, puis conserve les N villes les plus rentables
 (top 5 par defaut), ce qui donne un classement synthetique des meilleures
 villes.
+
+Resultats (extraits, `purchases_10000.txt`) :
+```text
+count_by_category.py
+"Baby"	515
+"Books"	600
+"CDs"	555
+"Cameras"	518
+"Children's Clothing"	554
+"Computers"	550
+"Consumer Electronics"	564
+"Crafts"	556
+"DVDs"	539
+"Garden"	539
+"Health and Beauty"	567
+"Men's Clothing"	573
+
+sum_by_category.py
+"Baby"	132845.15
+"Books"	149213.91
+"CDs"	142896.84
+"Cameras"	134448.18
+"Children's Clothing"	138348.24
+"Computers"	141206.54
+"Consumer Electronics"	147882.21
+"Crafts"	137843.05
+"DVDs"	133396.26
+"Garden"	134093.76
+"Health and Beauty"	143057.23
+"Men's Clothing"	145254.71
+
+sf_by_payment.py
+"Amex"	4167.34
+"Cash"	3511.56
+"Discover"	3217.94
+"MasterCard"	7117.61
+"Visa"	6141.3
+
+womens_cash_top_city.py
+"Kansas City"	1322.05
+
+top_cities_by_sales.py (top 5)
+"Scottsdale"	31072.38
+"Oakland"	31019.55
+"Las Vegas"	30266.46
+"Santa Ana"	30039.41
+"Lubbock"	29440.9
+```
+
+### Exercice 2 - Anagramme
+Objectif : a partir d'un fichier de mots, detecter les mots qui partagent
+exactement les memes lettres (ordre different). La sortie ne garde que les
+groupes avec au moins 2 mots, et ne tient pas compte des voyelles accentuees.
+
+Exemple attendu :
+```text
+faible, fiable
+arbre, barre
+devenir, deviner
+lemon, melon
+```
+
+Pour des tests plus intensifs, on peut utiliser `words_alpha` (anglais) ou
+`Liste-de-mots-francais-Gutenberg` (francais).
+
+Le script MRJob associe a cet exercice est `TP-Big-Data-HadoopMrjob/anagramme/anagramme.py`.
+Le mapper lit les mots (un par ligne ou separes par des virgules), passe en
+minuscules, puis neutralise les accents sur les voyelles avant de calculer une
+signature (lettres triees). Le reducer regroupe les mots ayant la meme
+signature, elimine les doublons, puis n'affiche que les groupes de taille
+superieure ou egale a 2.
