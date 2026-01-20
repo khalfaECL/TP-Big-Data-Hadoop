@@ -396,6 +396,36 @@ Remarque : la commande d'exemple `dos2unix fichier.py` affiche une erreur si le
 fichier n'existe pas. Dans notre cas, la conversion a bien fonctionne sur les
 deux scripts ameliore.
 
+### Multiplication de deux grandes matrices (generation)
+On se place dans le repertoire `~/TP_Hadoop/matrice` et on lance le script
+`matrice.py`. Il genere deux matrices (matriceA et matriceB), les enregistre
+dans `matriceA.txt` et `matriceB.txt`, puis affiche leur produit. Les
+dimensions observees sont **20x10** et **10x15**, donc un produit **20x15**.
+```bash
+cd ~/TP_Hadoop/matrice
+python matrice.py
+```
+
+Extrait d'affichage :
+```text
+matriceA =  [[74  7 23 54 96  2 83 66 77 50]
+ [ 3 69 98 19 97 46 56 89 91 23]
+ ...]
+matriceB =  [[66  5 65 41 70 56 23 15 57 64 53 71 94 75  0]
+ [83 40 46 16 34 46 69 10  0  7 58 44 27 39  0]
+ ...]
+Produit des 2 matrices =  [[173 163 204 180 132  15 178 228   4 167  10 131 246 124  33]
+ [ 32  96  60  47  60 110   7 160 239 188 154 209 213 241   6]
+ ...]
+```
+
+Les fichiers generes ont ensuite ete deposes sur HDFS dans le repertoire
+`input` :
+```bash
+hadoop fs -put matriceA.txt input
+hadoop fs -put matriceB.txt input
+```
+
 ## Conclusion
 Le traitement MapReduce fonctionne correctement sur un corpus volumineux.
 Le tri des donnees avant reduction est indispensable pour agreger les comptes
