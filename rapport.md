@@ -48,11 +48,11 @@ Get-Content dracula.txt | py wc_mapper.py | Sort-Object -CaseSensitive |
 
 ## Comparaison des sorties (mapper)
 ### Script initial
-Commande :
+J'ai utilise la commande suivante :
 ```powershell
 Get-Content dracula.txt | py wc_mapper.py | Select-Object -First 12
 ```
-Extrait :
+J'ai observe l'extrait suivant :
 ```text
 1897 	 1
 DRACULA 	 1
@@ -69,11 +69,11 @@ in 	 1
 ```
 
 ### Script improved
-Commande :
+J'ai utilise la commande suivante :
 ```powershell
 Get-Content dracula.txt | py wc_mapper_improved.py | Select-Object -First 12
 ```
-Extrait :
+J'ai observe l'extrait suivant :
 ```text
 dracula 	 1
 by 	 1
@@ -91,12 +91,12 @@ in 	 1
 
 ## Comparaison des sorties (reducer)
 ### Script initial
-Commande :
+J'ai utilise la commande suivante :
 ```powershell
 Get-Content dracula.txt | py wc_mapper.py | Sort-Object -CaseSensitive |
   py wc_reducer.py | Select-Object -First 12
 ```
-Extrait :
+J'ai observe l'extrait suivant :
 ```text
 "  	 1
 "1  	 2
@@ -113,12 +113,12 @@ Extrait :
 ```
 
 ### Script improved
-Commande :
+J'ai utilise la commande suivante :
 ```powershell
 Get-Content dracula.txt | py wc_mapper_improved.py | Sort-Object -CaseSensitive |
   py wc_reducer_improved.py | Select-Object -First 12
 ```
-Extrait :
+J'ai observe l'extrait suivant :
 ```text
 a 	 2949
 aback 	 1
@@ -138,7 +138,7 @@ abide 	 1
 J'observe la meme difference a deux niveaux. Au mapper, la version initiale
 conserve la casse et la ponctuation, ce qui fragmente un meme mot en plusieurs
 cles (par exemple `DRACULA` et `dracula`, ou encore `JOURNAL.`). Au reducer, ce
-bruit devient plus visible et fausse l'analyse si l'on ne nettoie pas le texte.
+bruit devient plus visible et fausse l'analyse si je ne nettoie pas le texte.
 
 J'ai donc applique une normalisation simple : passage en minuscules et filtrage
 des caracteres non alphabetiques. Le resultat donne un vocabulaire plus propre,
@@ -147,6 +147,7 @@ apostrophes (`HARKER'S` devient `harker` et `s`), ce qui reste acceptable pour
 ce TP.
 
 ## Resultats (extrait, version initiale)
+J'ai obtenu l'extrait suivant :
 ```text
 a  	 2849
 a'  	 2
@@ -206,7 +207,7 @@ hadoop fs -ls sortie/
 hadoop fs -tail sortie/part-00000
 ```
 
-Extrait obtenu :
+J'ai obtenu l'extrait suivant :
 ```text
 1
 yelping          1
@@ -338,7 +339,7 @@ cd ~/TP_Hadoop/matrice
 python matrice.py
 ```
 
-Extrait d'affichage :
+J'ai obtenu l'affichage suivant :
 ```text
 matriceA =  [[74  7 23 54 96  2 83 66 77 50]
  [ 3 69 98 19 97 46 56 89 91 23]
@@ -373,7 +374,7 @@ hadoop jar $STREAMINGJAR -cmdenv A_ROWS=20 -cmdenv A_COLS=10 -cmdenv B_COLS=15 \
   -input input/matriceA.txt,input/matriceB.txt -output sortie_matrice
 ```
 
-Resultat sous HDFS (extrait) :
+J'ai obtenu le resultat suivant sous HDFS (extrait) :
 ```bash
 hadoop fs -ls sortie_matrice_1
 hadoop fs -tail sortie_matrice_1/part-00000
@@ -501,9 +502,9 @@ J'ai execute la commande suivante en local :
 Get-Content .\dracula.txt | py .\wc_mrjob_1.py | Set-Content .\resultInline.txt
 ```
 
-Le fichier `resultInline.txt` a bien ete cree dans le dossier du TP.
+J'ai obtenu le fichier `resultInline.txt` dans le dossier du TP.
 
-Extrait de `resultInline.txt` :
+J'ai extrait cet exemple depuis `resultInline.txt` :
 ```text
 "service!"      1
 "service"       10
@@ -523,13 +524,13 @@ Extrait de `resultInline.txt` :
 J'ai ensuite lance le meme wordcount sur le cluster Hadoop avec le runner
 `-r hadoop`, en lecture depuis STDIN puis depuis HDFS.
 
-Commandes :
+J'ai utilise les commandes suivantes :
 ```bash
 python wc_mrjob_1.py -r hadoop < dracula > resultHadoop.txt
 python wc_mrjob_1.py -r hadoop hdfs:///user/root/input/dracula > resultHadoop.txt
 ```
 
-Extrait de sortie (job soumis et termine) :
+J'ai observe l'extrait suivant (job soumis et termine) :
 ```text
 Running job: job_1768916694477_0003
 map 100% reduce 100%
@@ -549,12 +550,10 @@ J'ai place les fichiers dans `TP-Big-Data-HadoopMrjob/ventes`. Chaque question
 est implemente dans un script MRJob distinct pour garder une trace claire des
 traitements.
 
-Les analyses demandees sont les suivantes : calculer le nombre d'achats par
-categorie, puis la somme totale depensee par categorie. Ensuite, isoler la ville
-de San Francisco pour mesurer la depense par moyen de paiement, et determiner
-la ville ou la categorie Women's Clothing genere le plus d'argent en Cash.
-Enfin, une requete originale et plus complexe (plusieurs steps MRJob) doit etre
-proposee pour aller au-dela des agregations simples.
+J'ai traite les analyses suivantes : nombre d'achats par categorie, somme
+totale depensee par categorie, depense a San Francisco par moyen de paiement,
+ville la plus rentable en Cash pour la categorie Women's Clothing, puis une
+requete originale multi-step pour aller au-dela des agregations simples.
 
 Pour structurer ce travail, j'ai associe chaque question a un script MRJob
 distinct place dans `TP-Big-Data-HadoopMrjob/ventes` : `count_by_category.py`,
@@ -578,7 +577,7 @@ ville la plus rentable sur ce segment.
 Dans `top_cities_by_sales.py`, je calcule le chiffre d'affaires par ville puis
 je conserve les N villes les plus rentables (top 5 par defaut).
 
-Resultats (extraits, `purchases_10000.txt`) :
+J'ai obtenu les resultats suivants (extraits, `purchases_10000.txt`) :
 ```text
 count_by_category.py
 "Baby"	515
@@ -627,9 +626,9 @@ top_cities_by_sales.py (top 5)
 ```
 
 ### Exercice 2 - Anagramme
-Objectif : a partir d'un fichier de mots, detecter les mots qui partagent
-exactement les memes lettres (ordre different). La sortie ne garde que les
-groupes avec au moins 2 mots, et ne tient pas compte des voyelles accentuees.
+J'ai ecrit un script MapReduce pour detecter les mots qui partagent exactement
+les memes lettres (ordre different). Je ne garde que les groupes avec au moins
+2 mots et je ne tiens pas compte des voyelles accentuees.
 
 Exemple attendu :
 ```text
@@ -639,12 +638,12 @@ devenir, deviner
 lemon, melon
 ```
 
-Pour des tests plus intensifs, on peut utiliser `words_alpha` (anglais) ou
-`Liste-de-mots-francais-Gutenberg` (francais).
+Pour des tests plus intensifs, j'ai utilise `words_alpha` (anglais) dans le
+dossier `TP-Big-Data-HadoopMrjob/anagramme`.
 
-Le script MRJob associe a cet exercice est `TP-Big-Data-HadoopMrjob/anagramme/anagramme.py`.
-Le mapper lit les mots (un par ligne ou separes par des virgules), passe en
-minuscules, puis neutralise les accents sur les voyelles avant de calculer une
-signature (lettres triees). Le reducer regroupe les mots ayant la meme
-signature, elimine les doublons, puis n'affiche que les groupes de taille
-superieure ou egale a 2.
+J'ai code le script `TP-Big-Data-HadoopMrjob/anagramme/anagramme.py`. Mon mapper
+lit les mots (un par ligne ou separes par des virgules), passe en minuscules,
+puis neutralise les accents sur les voyelles avant de calculer une signature
+(lettres triees). Mon reducer regroupe les mots ayant la meme signature,
+elimine les doublons, puis n'affiche que les groupes de taille superieure ou
+egale a 2.
