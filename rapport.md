@@ -17,36 +17,6 @@
 Mettre en place un comptage de mots (Word Count) sur un gros fichier texte en
 utilisant le paradigme MapReduce via des scripts Python en streaming Hadoop.
 
-## Contexte d'installation (Docker Hadoop)
-Dans le cadre du TP, un cluster Hadoop local peut etre lance via Docker
-avec un noeud maitre et deux noeuds esclaves. Ce reglage est utile pour
-reproduire un environnement distribue, mais les exercices peuvent aussi
-etre realises en local si la machine est limitee.
-
-## Execution Hadoop (cluster Docker)
-Apres l'installation des conteneurs, on entre dans le noeud maitre
-(`docker exec -it hadoop-master bash`). La premiere fois, il faut formater
-le HDFS avec la commande suivante (a faire une seule fois) :
-```bash
-/usr/local/hadoop/bin/hdfs namenode -format
-```
-
-Ensuite, on lance les services Hadoop sur le master :
-```bash
-start-dfs.sh
-start-yarn.sh
-```
-
-Les fichiers de travail restent dans le systeme Linux du conteneur, mais
-les gros fichiers sont places dans HDFS. On copie donc le fichier `dracula`
-dans HDFS avant le traitement :
-```bash
-cd TP_Hadoop/wordcount
-hadoop fs -mkdir -p input
-hadoop fs -put dracula input
-hadoop fs -ls input
-```
-
 ## Structure du projet
 Le projet se limite a trois fichiers, chacun avec un role clair :
 - `wc_mapper.py` : mapper Python qui emet `(mot, 1)` pour chaque mot lu.
@@ -223,6 +193,157 @@ abasement.  	 1
 abated  	 1
 abating;  	 2
 abbey  	 3
+```
+
+## Contexte d'installation (Docker Hadoop)
+Dans le cadre du TP, un cluster Hadoop local peut etre lance via Docker
+avec un noeud maitre et deux noeuds esclaves. Ce reglage est utile pour
+reproduire un environnement distribue, mais les exercices peuvent aussi
+etre realises en local si la machine est limitee.
+
+## Execution Hadoop (cluster Docker)
+Apres l'installation des conteneurs, on entre dans le noeud maitre
+(`docker exec -it hadoop-master bash`). La premiere fois, il faut formater
+le HDFS avec la commande suivante (a faire une seule fois) :
+```bash
+/usr/local/hadoop/bin/hdfs namenode -format
+```
+
+Ensuite, on lance les services Hadoop sur le master :
+```bash
+start-dfs.sh
+start-yarn.sh
+```
+
+Les fichiers de travail restent dans le systeme Linux du conteneur, mais
+les gros fichiers sont places dans HDFS. On copie donc le fichier `dracula`
+dans HDFS avant le traitement :
+```bash
+cd TP_Hadoop/wordcount
+hadoop fs -mkdir -p input
+hadoop fs -put dracula input
+hadoop fs -ls input
+```
+
+### Preparation des fichiers pour wordcount
+Le terminal du conteneur utilise un systeme Linux. Les scripts Python restent
+sur cet espace Linux, tandis que les gros fichiers sont places dans HDFS. On se
+place dans le dossier du TP, puis on copie `dracula` dans HDFS :
+```bash
+cd TP_Hadoop/wordcount
+hadoop fs -mkdir -p input
+hadoop fs -put dracula input
+hadoop fs -ls input
+```
+
+### Wordcount avec Hadoop
+On declare d'abord la librairie de streaming, puis on lance le job :
+```bash
+export STREAMINGJAR='/usr/local/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar'
+hadoop jar $STREAMINGJAR -files wc_mapper.py,wc_reducer.py \
+  -mapper wc_mapper.py -reducer wc_reducer.py \
+  -input input/dracula -output sortie
+```
+
+Le resultat est stocke dans HDFS. On peut verifier la presence des fichiers
+et lire la fin du resultat :
+```bash
+hadoop fs -ls sortie/
+hadoop fs -tail sortie/part-00000
+```
+
+Extrait obtenu :
+```text
+1
+yelping          1
+yer      9
+yer,     1
+yes!     3
+yes!"    1
+yes,     5
+yes;     1
+yesterday        16
+yesterday!       1
+yesterday,       7
+yesterday.       2
+yet      122
+yet!     1
+yet,     13
+yet,"    1
+yet-     3
+yet.     8
+yet.'    1
+yet..."          1
+yet;     5
+yew      1
+yew,     1
+yew-tree,        2
+yew-trees        1
+yews     1
+yield    3
+yield.           1
+yield;           1
+yielded          3
+yielded,         1
+yielding         1
+yields           2
+yoke,    1
+you      1002
+you!     4
+you!"    5
+you!'    1
+you'     1
+you'd    2
+you'll           2
+you're           2
+you've           4
+you,     94
+you,"    2
+you,'says        1
+you-     10
+you.     38
+you."    13
+you:     3
+you;     5
+you?     8
+you?"    3
+young    45
+young,           3
+young,-          1
+young-           1
+young.           2
+young;           1
+younger          3
+younger,         1
+younger;         1
+your     273
+your's           1
+yours    2
+yours!"          2
+yours,           5
+yours.           3
+yours."          1
+yours;           1
+yourself         8
+yourself,        4
+yourself,"       1
+yourself.        6
+yourself?"       2
+yourself?'       1
+yourselves       2
+youth    5
+youthful         2
+zeal;    1
+zealous          1
+zoophagous       3
+zoophagous,      1
+zoophagy!"       1
+```
+
+Note : si un dossier `sortie` existe deja, il faut soit le supprimer, soit
+changer le nom de sortie (ex. `sortie2`). Suppression :
+```bash
+hadoop fs -rm -r -f sortie
 ```
 
 ## Conclusion
