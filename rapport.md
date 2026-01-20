@@ -426,7 +426,223 @@ hadoop fs -put matriceA.txt input
 hadoop fs -put matriceB.txt input
 ```
 
+### Multiplication de deux grandes matrices (MapReduce)
+L'exercice demande d'ecrire un mapper et un reducer pour calculer le produit
+matriciel a partir de `matriceA.txt` et `matriceB.txt`. Le mapper identifie la
+matrice (A ou B) via le nom du fichier, puis emet des paires pour chaque cellule
+cible `(i,j)`. Le reducer regroupe ces valeurs et somme les produits sur l'indice
+`k`.
+
+Les scripts proposes sont `matrice_mapper.py` et `matrice_reducer.py`. Les
+dimensions par defaut correspondent aux matrices generees (A: 20x10, B: 10x15),
+et peuvent etre adaptees via `A_ROWS`, `A_COLS`, `B_COLS`.
+```bash
+hadoop jar $STREAMINGJAR -cmdenv A_ROWS=20 -cmdenv A_COLS=10 -cmdenv B_COLS=15 \
+  -files matrice_mapper.py,matrice_reducer.py \
+  -mapper "python matrice_mapper.py" -reducer "python matrice_reducer.py" \
+  -input input/matriceA.txt,input/matriceB.txt -output sortie_matrice
+```
+
+Resultat sous HDFS (extrait) :
+```bash
+hadoop fs -ls sortie_matrice_1
+hadoop fs -tail sortie_matrice_1/part-00000
+```
+```text
+Found 2 items
+-rw-r--r--   2 root supergroup          0 2026-01-20 15:51 sortie_matrice_1/_SUCCESS
+-rw-r--r--   2 root supergroup       3124 2026-01-20 15:51 sortie_matrice_1/part-00000
+152
+3,14    11940
+3,2     28447
+3,3     22120
+3,4     30060
+3,5     21063
+3,6     26746
+3,7     19926
+3,8     14163
+3,9     29997
+4,0     21977
+4,1     33934
+4,10    28865
+4,11    30957
+4,12    18286
+4,13    23727
+4,14    12441
+4,2     32849
+4,3     25314
+4,4     26935
+4,5     18806
+4,6     35818
+4,7     21576
+4,8     14763
+4,9     30138
+5,0     20334
+5,1     35618
+5,10    35768
+5,11    34278
+5,12    18303
+5,13    31813
+5,14    18635
+5,2     30745
+5,3     32375
+5,4     27975
+5,5     26968
+5,6     36161
+5,7     26434
+5,8     17880
+5,9     37984
+6,0     21867
+6,1     25053
+6,10    24984
+6,11    27507
+6,12    14806
+6,13    22214
+6,14    9970
+6,2     24911
+6,3     20952
+6,4     24439
+6,5     16278
+6,6     27346
+6,7     17623
+6,8     12495
+6,9     26121
+7,0     22057
+7,1     21534
+7,10    22060
+7,11    24057
+7,12    17224
+7,13    22651
+7,14    10623
+7,2     22438
+7,3     18512
+7,4     23217
+7,5     16868
+7,6     23727
+7,7     15926
+7,8     14315
+7,9     24909
+8,0     24457
+8,1     34757
+8,10    40575
+8,11    40141
+8,12    24009
+8,13    32850
+8,14    17250
+8,2     35031
+8,3     33991
+8,4     31587
+8,5     28281
+8,6     39964
+8,7     27567
+8,8     19234
+8,9     40216
+9,0     23031
+9,1     20891
+9,10    28235
+9,11    30052
+9,12    17694
+9,13    24959
+9,14    12853
+9,2     22584
+9,3     22517
+9,4     25503
+9,5     24390
+9,6     25706
+9,7     17808
+9,8     12640
+9,9     25803
+```
+
 ## Conclusion
 Le traitement MapReduce fonctionne correctement sur un corpus volumineux.
 Le tri des donnees avant reduction est indispensable pour agreger les comptes
 par mot.
+
+<div style="page-break-after: always;"></div>
+
+## Hadoop MapReduce avec MrJob
+Cette partie utilise la librairie **MrJob** et se deroule dans le dossier
+`TP-Big-Data-HadoopMrjob`. L'objectif est de tester un wordcount en mode local
+avant de passer aux etapes suivantes.
+
+### Etape 1 - Test local (MrJob)
+Sous PowerShell, la redirection `<` ne fonctionne pas comme sous Linux. La
+commande equivalente est :
+```powershell
+Get-Content .\dracula.txt | py .\wc_mrjob_1.py | Set-Content .\resultInline.txt
+```
+
+Resultat : le fichier `resultInline.txt` a bien ete cree dans le dossier du TP.
+
+Extrait de `resultInline.txt` :
+```text
+"service!"      1
+"service"       10
+"service,"      1
+"service-"      1
+"service."      2
+"service;"      1
+"services"      1
+"set"   47
+"set,"  9
+"set."  6
+"setting"       4
+"settle"        5
+```
+
+Verification : avec `cat resultInline.txt` (alias `Get-Content` sous
+PowerShell), on doit voir des lignes au format `mot<TAB>compte`. Pour valider
+rapidement, on peut chercher un mot attendu (ex. `service`, `shall`) et verifier
+qu'il a un compteur non nul.
+
+### Exercice 1 - Questionner un fichier de ventes
+Dans cette partie, l'objectif est d'analyser un gros fichier de ventes afin de
+produire des statistiques. Deux jeux de donnees sont utilises : `purchases.txt`
+(plus de 4 000 000 lignes) et un extrait `purchases_10000.txt` pour des tests
+rapides. Le fichier est tabule et contient 6 colonnes : date (YYYY-MM-DD),
+heure (hh:mm), ville, categorie d'achat (Book, Men's Clothing, DVDs, etc.),
+somme depensee et moyen de paiement (Amex, Cash, MasterCard, etc.).
+
+La preparation consiste a creer un repertoire local et y deposer le fichier de
+ventes. En Python, la tabulation est representee par `\t`, ce qui permet de
+parser facilement les lignes (ex. `avant\tapres`).
+
+Les fichiers ont ete places dans `TP-Big-Data-HadoopMrjob/ventes`, avec
+`purchases.txt` pour le traitement complet et `purchases_10000.txt` pour les
+tests rapides. Chaque question suivante doit etre implemente dans un script
+MRJob distinct afin de garder une trace claire des traitements.
+
+Les analyses demandees sont les suivantes : calculer le nombre d'achats par
+categorie, puis la somme totale depensee par categorie. Ensuite, isoler la ville
+de San Francisco pour mesurer la depense par moyen de paiement, et determiner
+la ville ou la categorie Women's Clothing genere le plus d'argent en Cash.
+Enfin, une requete originale et plus complexe (plusieurs steps MRJob) doit etre
+proposee pour aller au-dela des agregations simples.
+
+Pour structurer ce travail, chaque question est associee a un script MRJob
+distinct place dans `TP-Big-Data-HadoopMrjob/ventes` : `count_by_category.py`,
+`sum_by_category.py`, `sf_by_payment.py`, `womens_cash_top_city.py`. La requete
+originale multi-step est `top_cities_by_sales.py`, qui classe les villes par
+chiffre d'affaires et ressort un top 5 par defaut (parametrable).
+
+`count_by_category.py` lit chaque ligne, valide les 6 champs tabules et ne
+garde que la categorie. Le mapper emet `(categorie, 1)` et le reducer additionne
+ces valeurs pour obtenir le nombre d'achats par categorie.
+
+`sum_by_category.py` suit la meme logique de parsing, mais conserve le montant.
+Le mapper emet `(categorie, montant)` et le reducer calcule la somme afin de
+fournir le chiffre d'affaires total par categorie.
+
+`sf_by_payment.py` filtre uniquement les lignes de la ville "San Francisco".
+Il regroupe ensuite les montants par moyen de paiement, ce qui permet de
+comparer la depense totale par carte, cash, etc. dans cette ville.
+
+`Women's Clothing" avec paiement "Cash" et on agrege par ville,
+puis on compare les totaux pour ressortir la ville la plus rentable sur ce
+segment precis.
+
+`top_cities_by_sales.py` est la requete multi-step originale. Elle calcule le
+chiffre d'affaires par ville, puis conserve les N villes les plus rentables
+(top 5 par defaut), ce qui donne un classement synthetique des meilleures
+villes.
