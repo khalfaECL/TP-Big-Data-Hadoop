@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # Compte rendu - TP Big Data Hadoop
 ## Module: Big Data / Hadoop
@@ -14,62 +14,36 @@
 <div style="page-break-after: always;"></div>
 
 ## Objectif
-Mettre en place un comptage de mots (Word Count) sur un gros fichier texte en
-utilisant le paradigme MapReduce via des scripts Python en streaming Hadoop.
+J'ai mis en place un comptage de mots (Word Count) sur un gros fichier texte
+en utilisant le paradigme MapReduce via des scripts Python en streaming Hadoop.
 
 ## Structure du projet
-Le projet se limite a trois fichiers, chacun avec un role clair :
+J'utilise trois fichiers principaux, chacun avec un role clair :
 - `wc_mapper.py` : mapper Python qui emet `(mot, 1)` pour chaque mot lu.
 - `wc_reducer.py` : reducer Python qui additionne les occurrences par mot.
 - `dracula.txt` : corpus de test utilise pour valider le flux.
 
 ## Points-cles du code
 ### Mapper (`wc_mapper.py`)
-Le mapper lit chaque ligne depuis STDIN, la decoupe en mots avec `split()`, puis
-emet un couple `(mot, 1)` pour chaque occurrence. Cette sortie sert d'entree
-au tri puis au reducer.
+J'ai code un mapper qui lit chaque ligne depuis STDIN, la decoupe en mots avec
+`split()`, puis emet un couple `(mot, 1)` pour chaque occurrence. Cette sortie
+sert d'entree au tri puis au reducer.
 
 ### Reducer (`wc_reducer.py`)
-Le reducer lit un flux trie par cle (mot), convertit le compteur en entier et
-aggrege les occurrences. A chaque changement de mot, il ecrit `(mot, total)`,
-et pense a emettre le dernier mot en fin de flux.
+J'ai code un reducer qui lit un flux trie par cle (mot), convertit le compteur
+en entier et agrege les occurrences. A chaque changement de mot, il ecrit
+`(mot, total)` et emet le dernier mot en fin de flux.
 
 ## Execution
 ### Test local (PowerShell)
-Depuis un terminal, se placer dans le dossier de travail (`cd ...`).
-Verifier que la premiere ligne des scripts est bien :
-```text
-#!/usr/bin/env python3
-```
-
-Execution du mapper seul :
+J'ai execute les commandes suivantes en local :
 ```powershell
 Get-Content dracula.txt | py wc_mapper.py
 ```
 
-Execution complete (mapper + tri + reducer) :
 ```powershell
 Get-Content dracula.txt | py wc_mapper.py | Sort-Object -CaseSensitive |
   py wc_reducer.py | Select-Object -First 20
-```
-
-Remarque Windows : si `py` n'est pas disponible, utiliser `python.exe` (ou
-ajouter Python au `PATH`).
-
-### Test local (Linux/Mac)
-```bash
-cat dracula.txt | python3 wc_mapper.py
-cat dracula.txt | python3 wc_mapper.py | sort | python3 wc_reducer.py | head -n 20
-```
-
-### Hadoop Streaming (exemple)
-```bash
-hadoop jar /path/to/hadoop-streaming.jar \
-  -input /user/etu/dracula.txt \
-  -output /user/etu/wc_out \
-  -mapper "python3 wc_mapper.py" \
-  -reducer "python3 wc_reducer.py" \
-  -file wc_mapper.py -file wc_reducer.py
 ```
 
 ## Comparaison des sorties (mapper)
@@ -114,8 +88,6 @@ journal 	 1
 kept 	 1
 in 	 1
 ```
-
-Commentaire :
 
 ## Comparaison des sorties (reducer)
 ### Script initial
@@ -162,22 +134,17 @@ abhorred 	 2
 abide 	 1
 ```
 
-Commentaire :
-
 ## Analyse et ameliorations
-Les deux comparaisons racontent la meme chose a deux niveaux. Au mapper, la
-version initiale conserve la casse et la ponctuation, ce qui fragmente un meme
-mot en plusieurs cles (par exemple `DRACULA` et `dracula`, ou encore `JOURNAL.`).
-Au reducer, ce bruit devient plus visible : le tri lexicographique fait remonter
-des cles parasites (guillemets, chiffres isoles), ce qui fausse l'analyse des
-frequences si l'on ne nettoie pas le texte en amont.
+J'observe la meme difference a deux niveaux. Au mapper, la version initiale
+conserve la casse et la ponctuation, ce qui fragmente un meme mot en plusieurs
+cles (par exemple `DRACULA` et `dracula`, ou encore `JOURNAL.`). Au reducer, ce
+bruit devient plus visible et fausse l'analyse si l'on ne nettoie pas le texte.
 
-La version improved applique une normalisation simple mais efficace : passage
-en minuscules et filtrage des caracteres non alphabetiques. Le resultat est un
-vocabulaire plus propre et stable, mieux adapte a un comptage fiable. Cette
-approche se paie par une separation des apostrophes (`HARKER'S` devient `harker`
-et `s`), un choix acceptable pour un premier traitement mais ajustable selon
-les objectifs (par exemple en conservant les contractions).
+J'ai donc applique une normalisation simple : passage en minuscules et filtrage
+des caracteres non alphabetiques. Le resultat donne un vocabulaire plus propre,
+adapte a un comptage fiable. Cette approche se paie par la separation des
+apostrophes (`HARKER'S` devient `harker` et `s`), ce qui reste acceptable pour
+ce TP.
 
 ## Resultats (extrait, version initiale)
 ```text
@@ -196,39 +163,27 @@ abbey  	 3
 ```
 
 ## Contexte d'installation (Docker Hadoop)
-Dans le cadre du TP, un cluster Hadoop local peut etre lance via Docker
-avec un noeud maitre et deux noeuds esclaves. Ce reglage est utile pour
-reproduire un environnement distribue, mais les exercices peuvent aussi
-etre realises en local si la machine est limitee.
+Dans ce TP, j'ai lance un cluster Hadoop local via Docker avec un noeud maitre
+et deux noeuds esclaves. Cela me permet de reproduire un environnement
+distribue sur ma machine.
 
 ## Execution Hadoop (cluster Docker)
-Apres l'installation des conteneurs, on entre dans le noeud maitre
-(`docker exec -it hadoop-master bash`). La premiere fois, il faut formater
-le HDFS avec la commande suivante (a faire une seule fois) :
+Apres l'installation des conteneurs, j'entre dans le noeud maitre
+(`docker exec -it hadoop-master bash`). La premiere fois, je formate le HDFS :
 ```bash
 /usr/local/hadoop/bin/hdfs namenode -format
 ```
 
-Ensuite, on lance les services Hadoop sur le master :
+Ensuite, je lance les services Hadoop sur le master :
 ```bash
 start-dfs.sh
 start-yarn.sh
 ```
 
-Les fichiers de travail restent dans le systeme Linux du conteneur, mais
-les gros fichiers sont places dans HDFS. On copie donc le fichier `dracula`
-dans HDFS avant le traitement :
-```bash
-cd TP_Hadoop/wordcount
-hadoop fs -mkdir -p input
-hadoop fs -put dracula input
-hadoop fs -ls input
-```
-
 ### Preparation des fichiers pour wordcount
-Le terminal du conteneur utilise un systeme Linux. Les scripts Python restent
-sur cet espace Linux, tandis que les gros fichiers sont places dans HDFS. On se
-place dans le dossier du TP, puis on copie `dracula` dans HDFS :
+Dans le conteneur, j'utilise le systeme Linux et je garde les scripts Python
+sur cet espace. Les fichiers volumineux sont places dans HDFS. Je me place dans
+le dossier du TP puis je copie `dracula` dans HDFS :
 ```bash
 cd TP_Hadoop/wordcount
 hadoop fs -mkdir -p input
@@ -237,7 +192,7 @@ hadoop fs -ls input
 ```
 
 ### Wordcount avec Hadoop
-On declare d'abord la librairie de streaming, puis on lance le job :
+J'ai declare la librairie de streaming puis j'ai lance le job :
 ```bash
 export STREAMINGJAR='/usr/local/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar'
 hadoop jar $STREAMINGJAR -files wc_mapper.py,wc_reducer.py \
@@ -245,8 +200,7 @@ hadoop jar $STREAMINGJAR -files wc_mapper.py,wc_reducer.py \
   -input input/dracula -output sortie
 ```
 
-Le resultat est stocke dans HDFS. On peut verifier la presence des fichiers
-et lire la fin du resultat :
+J'ai ensuite verifie la presence des fichiers et la fin du resultat :
 ```bash
 hadoop fs -ls sortie/
 hadoop fs -tail sortie/part-00000
@@ -340,49 +294,31 @@ zoophagous,      1
 zoophagy!"       1
 ```
 
-Note : si un dossier `sortie` existe deja, il faut soit le supprimer, soit
-changer le nom de sortie (ex. `sortie2`). Suppression :
-```bash
-hadoop fs -rm -r -f sortie
-```
 
 ### Monitoring du cluster et des jobs
-Hadoop propose des interfaces web utiles pour verifier l'etat du cluster. Le
-Namenode est visible sur `http://localhost:9870` et le ResourceManager (Yarn)
-sur `http://localhost:8088`. Ces ports ont ete exposes lors du lancement des
-conteneurs Docker.
+J'ai consulte les interfaces web du Namenode (`http://localhost:9870`) et du
+ResourceManager Yarn (`http://localhost:8088`). Sur le Namenode, j'ai observe
+un etat **active**, Hadoop **3.4.1**, un seul datanode en service et un usage
+HDFS tres faible (**~1.42 MB**). Le resume indique `Safemode: off` et
+`Security: off`, ce qui confirme que le cluster est operationnel.
 
-Sur la page du Namenode, mon instance indique un etat **active** et une version
-Hadoop **3.4.1**, ce qui confirme que le service est bien demarre. L'onglet
-"Datanodes" montre un seul noeud en service, avec une capacite d'environ
-**1006.85 GB** et un usage HDFS tres faible (**~1.42 MB**), ce qui est coherent
-avec un petit test sur `dracula`. Le resume affiche aussi `Safemode: off` et
-`Security: off`, donc le cluster est operationnel pour les essais du TP.
-
-Enfin, le tableau "Summary" liste **1 Live Node**, **0 Dead Nodes** et un
-petit nombre de blocs (5), signe que les fichiers charges dans HDFS sont bien
-reconnus. Ces observations confirment que le cluster tourne correctement avant
-le lancement des jobs MapReduce.
-
-Du cote Yarn (port `8088`), la page "Nodes of the cluster" montre un seul noeud
-en etat **RUNNING**, avec **12 GB** de memoire et **8 vCores** disponibles, et
-aucune ressource consommee au repos. La page "All Applications" affiche un job
-MapReduce termine avec le statut **SUCCEEDED**, ce qui confirme que l'execution
-du wordcount a bien ete prise en compte par le ResourceManager.
+Sur Yarn, la page "Nodes of the cluster" montre un noeud **RUNNING** avec
+**12 GB** et **8 vCores** disponibles. La page "All Applications" affiche un
+job MapReduce termine avec le statut **SUCCEEDED**, ce qui valide l'execution
+du wordcount sur le cluster.
 
 ## Tests et exercice
 ### Wordcount improved
-Pour reutiliser les scripts ameliores dans le conteneur Hadoop, on ouvre un
-second terminal sur la machine hote et on copie les fichiers vers Linux avec
-`docker cp`. Cette methode servira aussi pour de futurs scripts :
+Pour reutiliser les scripts ameliores dans le conteneur Hadoop, j'ai ouvert un
+second terminal sur la machine hote et j'ai copie les fichiers vers Linux avec
+`docker cp` :
 ```powershell
 docker cp wc_mapper_improved.py hadoop-master:/root/TP_Hadoop/wordcount/
 docker cp wc_reducer_improved.py hadoop-master:/root/TP_Hadoop/wordcount/
 ```
 
-Dans le premier terminal (dans le conteneur), on verifie la presence des
-fichiers, on les rend executables, puis on convertit les fins de ligne Windows
-vers Linux avec `dos2unix` :
+Dans le conteneur, j'ai verifie la presence des fichiers, je les ai rendus
+executables, puis j'ai converti les fins de ligne Windows vers Linux :
 ```bash
 cd /root/TP_Hadoop/wordcount
 ls
@@ -392,13 +328,9 @@ dos2unix wc_mapper_improved.py
 dos2unix wc_reducer_improved.py
 ```
 
-Remarque : la commande d'exemple `dos2unix fichier.py` affiche une erreur si le
-fichier n'existe pas. Dans notre cas, la conversion a bien fonctionne sur les
-deux scripts ameliore.
-
 ### Multiplication de deux grandes matrices (generation)
-On se place dans le repertoire `~/TP_Hadoop/matrice` et on lance le script
-`matrice.py`. Il genere deux matrices (matriceA et matriceB), les enregistre
+Je me suis place dans le repertoire `~/TP_Hadoop/matrice` et j'ai lance le
+script `matrice.py`. Il genere deux matrices (matriceA et matriceB), les enregistre
 dans `matriceA.txt` et `matriceB.txt`, puis affiche leur produit. Les
 dimensions observees sont **20x10** et **10x15**, donc un produit **20x15**.
 ```bash
@@ -419,21 +351,19 @@ Produit des 2 matrices =  [[173 163 204 180 132  15 178 228   4 167  10 131 246 
  ...]
 ```
 
-Les fichiers generes ont ensuite ete deposes sur HDFS dans le repertoire
-`input` :
+J'ai ensuite depose ces fichiers sur HDFS dans le repertoire `input` :
 ```bash
 hadoop fs -put matriceA.txt input
 hadoop fs -put matriceB.txt input
 ```
 
 ### Multiplication de deux grandes matrices (MapReduce)
-L'exercice demande d'ecrire un mapper et un reducer pour calculer le produit
-matriciel a partir de `matriceA.txt` et `matriceB.txt`. Le mapper identifie la
-matrice (A ou B) via le nom du fichier, puis emet des paires pour chaque cellule
-cible `(i,j)`. Le reducer regroupe ces valeurs et somme les produits sur l'indice
-`k`.
+J'ai ecrit un mapper et un reducer pour calculer le produit matriciel a partir
+de `matriceA.txt` et `matriceB.txt`. Le mapper identifie la matrice (A ou B) via
+le nom du fichier, puis emet des paires pour chaque cellule cible `(i,j)`. Le
+reducer regroupe ces valeurs et somme les produits sur l'indice `k`.
 
-Les scripts proposes sont `matrice_mapper.py` et `matrice_reducer.py`. Les
+Les scripts utilises sont `matrice_mapper.py` et `matrice_reducer.py`. Les
 dimensions par defaut correspondent aux matrices generees (A: 20x10, B: 10x15),
 et peuvent etre adaptees via `A_ROWS`, `A_COLS`, `B_COLS`.
 ```bash
@@ -555,25 +485,23 @@ Found 2 items
 ```
 
 ## Conclusion
-Le traitement MapReduce fonctionne correctement sur un corpus volumineux.
-Le tri des donnees avant reduction est indispensable pour agreger les comptes
-par mot.
+Je conclus que le traitement MapReduce fonctionne correctement sur un corpus
+volumineux. Le tri des donnees avant reduction est indispensable pour agreger
+les comptes par mot.
 
 <div style="page-break-after: always;"></div>
 
 ## Hadoop MapReduce avec MrJob
-Cette partie utilise la librairie **MrJob** et se deroule dans le dossier
-`TP-Big-Data-HadoopMrjob`. L'objectif est de tester un wordcount en mode local
-avant de passer aux etapes suivantes.
+J'ai utilise la librairie **MrJob** dans le dossier `TP-Big-Data-HadoopMrjob`
+pour tester un wordcount en mode local avant la suite.
 
 ### Etape 1 - Test local (MrJob)
-Sous PowerShell, la redirection `<` ne fonctionne pas comme sous Linux. La
-commande equivalente est :
+J'ai execute la commande suivante en local :
 ```powershell
 Get-Content .\dracula.txt | py .\wc_mrjob_1.py | Set-Content .\resultInline.txt
 ```
 
-Resultat : le fichier `resultInline.txt` a bien ete cree dans le dossier du TP.
+Le fichier `resultInline.txt` a bien ete cree dans le dossier du TP.
 
 Extrait de `resultInline.txt` :
 ```text
@@ -591,15 +519,9 @@ Extrait de `resultInline.txt` :
 "settle"        5
 ```
 
-Verification : avec `cat resultInline.txt` (alias `Get-Content` sous
-PowerShell), on doit voir des lignes au format `mot<TAB>compte`. Pour valider
-rapidement, on peut chercher un mot attendu (ex. `service`, `shall`) et verifier
-qu'il a un compteur non nul.
-
 ### Test MrJob sur le cluster Hadoop
-Le meme wordcount a ete lance sur le cluster Hadoop avec le runner `-r hadoop`.
-Deux variantes ont ete testees : lecture depuis STDIN et lecture directe depuis
-HDFS.
+J'ai ensuite lance le meme wordcount sur le cluster Hadoop avec le runner
+`-r hadoop`, en lecture depuis STDIN puis depuis HDFS.
 
 Commandes :
 ```bash
@@ -616,21 +538,16 @@ The url to track the job: http://hadoop-master:8088/proxy/application_1768916694
 ```
 
 ### Exercice 1 - Questionner un fichier de ventes
-Dans cette partie, l'objectif est d'analyser un gros fichier de ventes afin de
-produire des statistiques. Deux jeux de donnees sont utilises : `purchases.txt`
-(plus de 4 000 000 lignes) et un extrait `purchases_10000.txt` pour des tests
-rapides. Le fichier est tabule et contient 6 colonnes : date (YYYY-MM-DD),
-heure (hh:mm), ville, categorie d'achat (Book, Men's Clothing, DVDs, etc.),
-somme depensee et moyen de paiement (Amex, Cash, MasterCard, etc.).
+J'ai analyse un gros fichier de ventes pour produire des statistiques. J'ai
+utilise `purchases.txt` (plus de 4 000 000 lignes) et un extrait
+`purchases_10000.txt` pour des tests rapides. Le fichier est tabule et contient
+6 colonnes : date (YYYY-MM-DD), heure (hh:mm), ville, categorie d'achat (Book,
+Men's Clothing, DVDs, etc.), somme depensee et moyen de paiement (Amex, Cash,
+MasterCard, etc.).
 
-La preparation consiste a creer un repertoire local et y deposer le fichier de
-ventes. En Python, la tabulation est representee par `\t`, ce qui permet de
-parser facilement les lignes (ex. `avant\tapres`).
-
-Les fichiers ont ete places dans `TP-Big-Data-HadoopMrjob/ventes`, avec
-`purchases.txt` pour le traitement complet et `purchases_10000.txt` pour les
-tests rapides. Chaque question suivante doit etre implemente dans un script
-MRJob distinct afin de garder une trace claire des traitements.
+J'ai place les fichiers dans `TP-Big-Data-HadoopMrjob/ventes`. Chaque question
+est implemente dans un script MRJob distinct pour garder une trace claire des
+traitements.
 
 Les analyses demandees sont les suivantes : calculer le nombre d'achats par
 categorie, puis la somme totale depensee par categorie. Ensuite, isoler la ville
@@ -639,32 +556,27 @@ la ville ou la categorie Women's Clothing genere le plus d'argent en Cash.
 Enfin, une requete originale et plus complexe (plusieurs steps MRJob) doit etre
 proposee pour aller au-dela des agregations simples.
 
-Pour structurer ce travail, chaque question est associee a un script MRJob
+Pour structurer ce travail, j'ai associe chaque question a un script MRJob
 distinct place dans `TP-Big-Data-HadoopMrjob/ventes` : `count_by_category.py`,
 `sum_by_category.py`, `sf_by_payment.py`, `womens_cash_top_city.py`. La requete
 originale multi-step est `top_cities_by_sales.py`, qui classe les villes par
 chiffre d'affaires et ressort un top 5 par defaut (parametrable).
 
-`count_by_category.py` lit chaque ligne, valide les 6 champs tabules et ne
-garde que la categorie. Le mapper emet `(categorie, 1)` et le reducer additionne
-ces valeurs pour obtenir le nombre d'achats par categorie.
+Dans `count_by_category.py`, j'extrais la categorie et j'emets `(categorie, 1)`.
+Le reducer additionne ces valeurs pour obtenir le nombre d'achats par categorie.
 
-`sum_by_category.py` suit la meme logique de parsing, mais conserve le montant.
-Le mapper emet `(categorie, montant)` et le reducer calcule la somme afin de
-fournir le chiffre d'affaires total par categorie.
+Dans `sum_by_category.py`, j'emets `(categorie, montant)` et je somme les
+montants pour produire le chiffre d'affaires total par categorie.
 
-`sf_by_payment.py` filtre uniquement les lignes de la ville "San Francisco".
-Il regroupe ensuite les montants par moyen de paiement, ce qui permet de
-comparer la depense totale par carte, cash, etc. dans cette ville.
+Dans `sf_by_payment.py`, je filtre les lignes de la ville "San Francisco" puis
+je regroupe les montants par moyen de paiement.
 
-`Women's Clothing" avec paiement "Cash" et on agrege par ville,
-puis on compare les totaux pour ressortir la ville la plus rentable sur ce
-segment precis.
+Dans `womens_cash_top_city.py`, je filtre la categorie "Women's Clothing" avec
+paiement "Cash", j'agrege par ville, puis je compare les totaux pour garder la
+ville la plus rentable sur ce segment.
 
-`top_cities_by_sales.py` est la requete multi-step originale. Elle calcule le
-chiffre d'affaires par ville, puis conserve les N villes les plus rentables
-(top 5 par defaut), ce qui donne un classement synthetique des meilleures
-villes.
+Dans `top_cities_by_sales.py`, je calcule le chiffre d'affaires par ville puis
+je conserve les N villes les plus rentables (top 5 par defaut).
 
 Resultats (extraits, `purchases_10000.txt`) :
 ```text
